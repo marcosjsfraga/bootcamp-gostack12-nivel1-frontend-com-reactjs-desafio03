@@ -1,31 +1,57 @@
-import React from "react";
+import React, { useState, useEffect } from 'react';
+import api from './services/api';
 
 import "./styles.css";
 
 function App() {
-  async function handleAddRepository() {
-    // TODO
-  }
+	const [repositories, setRepositories] = useState([]);
 
-  async function handleRemoveRepository(id) {
-    // TODO
-  }
+	useEffect(() => {
+		api.get('/repositories').then(response => {
+			setRepositories(response.data);
+		});
+	}, []);
 
-  return (
-    <div>
-      <ul data-testid="repository-list">
-        <li>
-          Repositório 1
+	async function handleAddRepository() {
+		const response = await api.post('/repositories', {
+			title: `Novo Repo ${Date.now()}`,
+			url: "https://github.com/marcosjsfraga/ecoleta-backend",
+			techs: ["ReajJS", "React Native"]
+		});
 
-          <button onClick={() => handleRemoveRepository(1)}>
-            Remover
-          </button>
-        </li>
-      </ul>
+		const repository = response.data;
+		setRepositories([...repositories, repository]);
+	}
 
-      <button onClick={handleAddRepository}>Adicionar</button>
-    </div>
-  );
+	async function handleRemoveRepository(id) {
+		await api.delete(`/repositories/${id}`);
+
+		const repositoryIndex = repositories.findIndex(repository => repository.id === id);
+
+		if (repositoryIndex >= 0) {
+		  	const repoList = [...repositories];
+		  	repoList.splice(repositoryIndex, 1);
+		  	setRepositories(repoList);
+		}		
+	}
+
+	return (
+		<div>
+			
+			<ul data-testid="repository-list">
+				{
+					repositories.map(repository => 
+						<li key={repository.id}>
+							{repository.title}
+							<button onClick={() => handleRemoveRepository(repository.id)}>Remover</button>
+						</li> 
+					)
+				}
+			</ul>
+			
+			<button onClick={handleAddRepository}>Adicionar</button>
+		</div>
+	);
 }
 
 export default App;
